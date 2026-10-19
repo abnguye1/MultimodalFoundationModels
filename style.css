@@ -1,0 +1,184 @@
+:root {
+    --bg-dark: #14111a;
+    --bg-mid: #1e1828;
+    --panel: #241c31;
+    --panel-hover: #2b2140;
+    --line: #4c3f61;
+    --text-main: #ede7f8;
+    --text-soft: #b7aacd;
+    --text-muted: #9184ab;
+    --accent: #d9cdf3;
+    --accent-strong: #b89ce8;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Source Sans 3", "Trebuchet MS", sans-serif;
+    color: var(--text-main);
+    background:
+        radial-gradient(circle at 15% 8%, #3f2b5f 0%, rgba(63, 43, 95, 0) 32%),
+        radial-gradient(circle at 85% 12%, #311f4f 0%, rgba(49, 31, 79, 0) 35%),
+        linear-gradient(160deg, var(--bg-dark) 0%, var(--bg-mid) 100%);
+    letter-spacing: 0.01em;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 100% 4px;
+    opacity: 0.25;
+}
+
+.hero {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 88px 24px 34px;
+    animation: rise-in 0.8s ease-out both;
+}
+
+.eyebrow {
+    margin: 0 0 12px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--accent-strong);
+}
+
+.hero h1 {
+    margin: 0;
+    font-family: "Fraunces", Georgia, serif;
+    font-size: clamp(2.1rem, 7vw, 4rem);
+    font-weight: 700;
+    line-height: 1.05;
+    color: #f2ecff;
+}
+
+.subtitle {
+    margin: 14px 0 0;
+    color: var(--text-soft);
+    font-size: 1rem;
+}
+
+.blog-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 8px 24px 64px;
+    display: grid;
+    gap: 18px;
+}
+
+.post-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(36, 28, 49, 0.82);
+    backdrop-filter: blur(3px);
+    padding: 24px;
+    transition: transform 220ms ease, border-color 220ms ease, background 220ms ease;
+    animation: rise-in 0.65s ease-out both;
+    animation-delay: var(--delay, 0s);
+}
+
+.post-card:hover,
+.post-card:focus-visible {
+    transform: translateY(-4px);
+    border-color: var(--accent-strong);
+    background: rgba(43, 33, 64, 0.95);
+}
+
+.tag {
+    margin: 0 0 10px;
+    color: var(--accent-strong);
+    font-size: 0.77rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+.post-card h2 {
+    margin: 0;
+    font-family: "Fraunces", Georgia, serif;
+    font-size: clamp(1.35rem, 3vw, 2rem);
+    line-height: 1.16;
+    color: #f3efff;
+}
+
+.post-card p {
+    margin: 14px 0 0;
+    color: var(--text-soft);
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+.card-footer {
+    margin-top: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.date {
+    font-size: 0.84rem;
+    color: var(--text-muted);
+}
+
+.read-more {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.site-footer {
+    border-top: 1px solid rgba(136, 117, 171, 0.35);
+    margin: 4px 24px 0;
+    padding: 26px 0 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+
+@keyframes rise-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 700px) {
+    .hero {
+        padding: 64px 18px 26px;
+    }
+
+    .blog-container {
+        padding: 6px 18px 46px;
+    }
+
+    .post-card {
+        padding: 20px;
+    }
+
+    .card-footer {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .site-footer {
+        margin: 0 18px;
+        padding-bottom: 28px;
+    }
+}
+
