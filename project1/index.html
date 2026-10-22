@@ -17,6 +17,7 @@
     <p class="subtitle">Andrew Nguyen | Fall 2026</p>
     <div class="hero-links">
         <a href="../index.html">Back to Landing Page</a>
+        <a href="#credits">Image Credits</a>
     </div>
 </header>
 
@@ -53,17 +54,15 @@
                 <tr><td>Part 2 preprocessing</td><td>CLIP transform: resize 224 (bicubic), center crop 224, CLIP mean/std normalization</td></tr>
                 <tr><td>Packages</td><td>Python 3.11.15, PyTorch 2.12.0 (nightly, CUDA 12.8), torchvision 0.26.0 (nightly), CLIP 1.0, NumPy, pandas, matplotlib, seaborn</td></tr>
                 <tr><td>Device</td><td>NVIDIA GeForce RTX 5060 Laptop GPU (inference only)</td></tr>
-                <tr><td>Reproducibility</td><td>Fixed seed 42; image embeddings and model outputs saved to disk so the encoders are not re-run</td></tr>
+                <tr><td>Reproducibility</td><td>Fixed seed 42; images stored locally; image embeddings and model outputs saved to disk so the encoders are not re-run</td></tr>
             </tbody>
         </table>
         </div>
 
         <h4>Image Collection</h4>
         <p>
-            The collection has <strong>20 images: 4 from each of 5 categories</strong>. The images come from
-            <strong>Imagenette</strong>, a 10-class subset of ImageNet released by fast.ai and downloaded with
-            <code>torchvision.datasets.Imagenette</code>. Every Imagenette class is an actual ImageNet-1k class,
-            so the label mapping to the ViT's output is exact.
+            The collection has <strong>20 images: 4 from each of 5 categories</strong>. Each category is an exact class
+            name in the ViT's ImageNet-1k label list, so the label mapping is one-to-one.
         </p>
         <div class="table-scroll">
         <table>
@@ -71,8 +70,8 @@
                 <tr><th>Category</th><th class="num">ImageNet index</th><th>WordNet ID</th><th>Image IDs</th></tr>
             </thead>
             <tbody>
-                <tr><td>tench (a freshwater fish)</td><td class="num">0</td><td>n01440764</td><td>#0-#3</td></tr>
-                <tr><td>English springer (a spaniel breed)</td><td class="num">217</td><td>n02102040</td><td>#4-#7</td></tr>
+                <tr><td>golden retriever</td><td class="num">207</td><td>n02099601</td><td>#0-#3</td></tr>
+                <tr><td>banana</td><td class="num">954</td><td>n07753592</td><td>#4-#7</td></tr>
                 <tr><td>church</td><td class="num">497</td><td>n03028079</td><td>#8-#11</td></tr>
                 <tr><td>garbage truck</td><td class="num">569</td><td>n03417042</td><td>#12-#15</td></tr>
                 <tr><td>parachute</td><td class="num">701</td><td>n03888257</td><td>#16-#19</td></tr>
@@ -80,19 +79,22 @@
         </table>
         </div>
         <p>
-            <strong>Selection rules:</strong> the five categories are visually distinct (a fish, a dog breed, a building,
-            a vehicle, and an object in the sky). Imagenette's validation folder also contains ImageNet
-            <em>training</em> images, which the ViT has already seen, so I only used official ImageNet validation
-            images (<code>ILSVRC2012_val_*.JPEG</code>). Four images per category were sampled with a fixed seed.
+            <strong>Source:</strong> all 20 images are photographs from <strong>Wikimedia Commons</strong>, selected with these rules:
         </p>
+        <ul>
+            <li><strong>License:</strong> public domain, CC0, CC BY, or CC BY-SA only, so the images can be shared and shown with attribution.</li>
+            <li><strong>Content:</strong> a real photograph (no drawings or composites) in which an object from the category is the main, clearly visible subject.</li>
+            <li><strong>Variety:</strong> different viewpoints, backgrounds, and conditions within each category (a puppy and adult dogs, ripe and green bananas, a dusk photo, a partly hidden truck), so not every example is easy.</li>
+        </ul>
         <p>
-            <strong>Sources and permissions:</strong> the images are subject to the ImageNet terms of access
-            (non-commercial research and educational use). They are downloaded at run time and are not redistributed
-            with the code. The figures on this page show them for educational analysis only.
+            <strong>Permissions:</strong> 9 images are public domain or CC0, 6 are CC BY, and 5 are CC BY-SA. The author,
+            license, and source page for every image are listed in the <a href="#credits">Image Credits</a> section and in
+            <code>images/credits.csv</code> in the code. The files are the 960-pixel-wide versions served by Commons, with no
+            other changes.
         </p>
         <figure>
-            <img src="images/collection.png" alt="Grid of the 20 images: four tench, four English springers, four churches, four garbage trucks, four parachutes">
-            <figcaption>Figure 1. The 20-image collection used in both parts. Image IDs (#0-#19) are used throughout this report.</figcaption>
+            <img src="images/collection.png" alt="Grid of the 20 images: four golden retrievers, four banana photos, four churches, four garbage trucks, four parachutes">
+            <figcaption>Figure 1. The 20-image collection used in both parts. Image IDs (#0-#19) are used throughout this report. Photo credits: see <a href="#credits">Image Credits</a>.</figcaption>
         </figure>
     </section>
 
@@ -116,8 +118,8 @@
         </div>
 
         <figure>
-            <img src="images/p1_patches.png" alt="An English springer puppy image with a 16 by 16 grid, and the same image split into 196 separate patches">
-            <figcaption>Figure 2. Image #4 resized and cropped to 224 x 224 (left) and split by my function into 196 patches shown in sequence order (right).</figcaption>
+            <img src="images/p1_patches.png" alt="A golden retriever image with a 16 by 16 grid, and the same image split into 196 separate patches">
+            <figcaption>Figure 2. Image #0 resized and cropped to 224 x 224 (left) and split by my function into 196 patches shown in sequence order (right).</figcaption>
         </figure>
 
         <h4>Tracing the Input Stage</h4>
@@ -159,7 +161,7 @@
             My patch function only <em>rearranges pixels</em>. It has no parameters, and each patch is still a small image.
             The model's patch projection is a <em>learned</em> map. To show the link, I applied <code>conv_proj</code>'s
             weights by hand to my own patches (flatten, then a matrix multiply). The result matched the model's tokens up
-            to float rounding (maximum difference <code>4.8e-6</code>).
+            to float rounding (maximum difference <code>3.1e-6</code>).
         </p>
         <p>
             Individual learned filters are hard to interpret, because the 768 output dimensions are an arbitrary basis.
@@ -173,8 +175,8 @@
 
         <h4>Discussion</h4>
         <p>
-            The two visualizations show different things. My patches are <strong>pixels</strong>: you can still see grass,
-            the fence post, and the puppy's ear. The projection filters are <strong>learned feature detectors</strong>.
+            The two visualizations show different things. My patches are <strong>pixels</strong>: you can still see the grass,
+            the fur, and the collar. The projection filters are <strong>learned feature detectors</strong>.
             The leading components are smooth, low-frequency patterns: green/magenta and blue/orange color-opponent blobs,
             and horizontal and vertical stripes. They look much like the first-layer filters of a CNN.
         </p>
@@ -200,26 +202,26 @@
                 <tr><th>ID</th><th>True label</th><th>Top-5 predictions (probability)</th><th>Top-1</th></tr>
             </thead>
             <tbody>
-                <tr><td>#0</td><td>tench</td><td><strong>tench (0.88)</strong> | garden spider (0.00) | necklace (0.00) | tick (0.00) | barracouta (0.00)</td><td>Correct</td></tr>
-                <tr><td>#1</td><td>tench</td><td><strong>tench (0.89)</strong> | barracouta (0.00) | monarch (0.00) | sulphur butterfly (0.00) | goldfish (0.00)</td><td>Correct</td></tr>
-                <tr><td>#2</td><td>tench</td><td><strong>tench (0.85)</strong> | coho (0.02) | barracouta (0.00) | sturgeon (0.00) | gar (0.00)</td><td>Correct</td></tr>
-                <tr><td>#3</td><td>tench</td><td><strong>tench (0.90)</strong> | barracouta (0.00) | eel (0.00) | monarch (0.00) | polecat (0.00)</td><td>Correct</td></tr>
-                <tr><td>#4</td><td>English springer</td><td><strong>English springer (0.83)</strong> | Brittany spaniel (0.01) | cocker spaniel (0.00) | Welsh springer spaniel (0.00) | wire-haired fox terrier (0.00)</td><td>Correct</td></tr>
-                <tr><td>#5</td><td>English springer</td><td><strong>English springer (0.85)</strong> | cocker spaniel (0.01) | Welsh springer spaniel (0.01) | clumber (0.00) | English setter (0.00)</td><td>Correct</td></tr>
-                <tr><td>#6</td><td>English springer</td><td><strong>English springer (0.90)</strong> | Welsh springer spaniel (0.00) | Brittany spaniel (0.00) | Lakeland terrier (0.00) | miniature schnauzer (0.00)</td><td>Correct</td></tr>
-                <tr class="highlight"><td>#7</td><td>English springer</td><td><strong>English springer (0.49)</strong> | Brittany spaniel (0.31) | English setter (0.01) | Welsh springer spaniel (0.01) | Border collie (0.01)</td><td>Correct</td></tr>
-                <tr><td>#8</td><td>church</td><td><strong>church (0.78)</strong> | monastery (0.08) | bell cote (0.01) | cinema (0.00) | palace (0.00)</td><td>Correct</td></tr>
-                <tr><td>#9</td><td>church</td><td><strong>church (0.70)</strong> | beacon (0.19) | bell cote (0.01) | monastery (0.01) | boathouse (0.00)</td><td>Correct</td></tr>
-                <tr class="highlight"><td>#10</td><td>church</td><td><strong>bell cote (0.57)</strong> | boathouse (0.13) | church (0.13) | barn (0.01) | lakeside (0.00)</td><td>Wrong</td></tr>
-                <tr><td>#11</td><td>church</td><td><strong>church (0.78)</strong> | bell cote (0.07) | vault (0.01) | monastery (0.01) | castle (0.00)</td><td>Correct</td></tr>
-                <tr><td>#12</td><td>garbage truck</td><td><strong>garbage truck (0.89)</strong> | trailer truck (0.01) | mobile home (0.00) | moving van (0.00) | tow truck (0.00)</td><td>Correct</td></tr>
-                <tr><td>#13</td><td>garbage truck</td><td><strong>garbage truck (0.90)</strong> | snowplow (0.00) | trailer truck (0.00) | ashcan (0.00) | crane (0.00)</td><td>Correct</td></tr>
-                <tr><td>#14</td><td>garbage truck</td><td><strong>garbage truck (0.91)</strong> | trailer truck (0.00) | snowplow (0.00) | tow truck (0.00) | ashcan (0.00)</td><td>Correct</td></tr>
-                <tr><td>#15</td><td>garbage truck</td><td><strong>garbage truck (0.92)</strong> | crane (0.00) | trailer truck (0.00) | snowplow (0.00) | tow truck (0.00)</td><td>Correct</td></tr>
-                <tr><td>#16</td><td>parachute</td><td><strong>parachute (0.92)</strong> | airship (0.00) | seashore (0.00) | balloon (0.00) | llama (0.00)</td><td>Correct</td></tr>
-                <tr><td>#17</td><td>parachute</td><td><strong>parachute (0.82)</strong> | balloon (0.02) | jean (0.00) | unicycle (0.00) | llama (0.00)</td><td>Correct</td></tr>
-                <tr><td>#18</td><td>parachute</td><td><strong>parachute (0.92)</strong> | balloon (0.00) | airship (0.00) | llama (0.00) | warplane (0.00)</td><td>Correct</td></tr>
-                <tr><td>#19</td><td>parachute</td><td><strong>parachute (0.91)</strong> | umbrella (0.00) | seashore (0.00) | balloon (0.00) | flagpole (0.00)</td><td>Correct</td></tr>
+                <tr><td>#0</td><td>golden retriever</td><td><strong>golden retriever (0.89)</strong> | Labrador retriever (0.01) | tennis ball (0.00) | Airedale (0.00) | Sussex spaniel (0.00)</td><td>Correct</td></tr>
+                <tr><td>#1</td><td>golden retriever</td><td><strong>golden retriever (0.86)</strong> | Labrador retriever (0.04) | Sussex spaniel (0.00) | kuvasz (0.00) | Great Pyrenees (0.00)</td><td>Correct</td></tr>
+                <tr><td>#2</td><td>golden retriever</td><td><strong>golden retriever (0.90)</strong> | Labrador retriever (0.00) | tennis ball (0.00) | Sussex spaniel (0.00) | cocker spaniel (0.00)</td><td>Correct</td></tr>
+                <tr><td>#3</td><td>golden retriever</td><td><strong>golden retriever (0.86)</strong> | Irish setter (0.01) | cocker spaniel (0.00) | Sussex spaniel (0.00) | curly-coated retriever (0.00)</td><td>Correct</td></tr>
+                <tr><td>#4</td><td>banana</td><td><strong>banana (0.90)</strong> | grocery store (0.00) | pineapple (0.00) | orange (0.00) | artichoke (0.00)</td><td>Correct</td></tr>
+                <tr class="highlight"><td>#5</td><td>banana</td><td><strong>banana (0.55)</strong> | orange (0.30) | lemon (0.01) | Granny Smith (0.01) | grocery store (0.00)</td><td>Correct</td></tr>
+                <tr><td>#6</td><td>banana</td><td><strong>banana (0.91)</strong> | orange (0.00) | pineapple (0.00) | lemon (0.00) | grocery store (0.00)</td><td>Correct</td></tr>
+                <tr><td>#7</td><td>banana</td><td><strong>banana (0.87)</strong> | grocery store (0.00) | orange (0.00) | green snake (0.00) | fig (0.00)</td><td>Correct</td></tr>
+                <tr><td>#8</td><td>church</td><td><strong>church (0.91)</strong> | bell cote (0.01) | tile roof (0.00) | barn (0.00) | vault (0.00)</td><td>Correct</td></tr>
+                <tr><td>#9</td><td>church</td><td><strong>church (0.69)</strong> | barn (0.14) | boathouse (0.04) | dome (0.01) | mobile home (0.01)</td><td>Correct</td></tr>
+                <tr><td>#10</td><td>church</td><td><strong>church (0.77)</strong> | monastery (0.15) | palace (0.01) | bell cote (0.00) | castle (0.00)</td><td>Correct</td></tr>
+                <tr><td>#11</td><td>church</td><td><strong>church (0.88)</strong> | bell cote (0.01) | castle (0.01) | monastery (0.01) | flagpole (0.00)</td><td>Correct</td></tr>
+                <tr><td>#12</td><td>garbage truck</td><td><strong>garbage truck (0.90)</strong> | snowplow (0.00) | fire engine (0.00) | tow truck (0.00) | trailer truck (0.00)</td><td>Correct</td></tr>
+                <tr><td>#13</td><td>garbage truck</td><td><strong>garbage truck (0.88)</strong> | snowplow (0.01) | crane (0.00) | tow truck (0.00) | trailer truck (0.00)</td><td>Correct</td></tr>
+                <tr class="highlight"><td>#14</td><td>garbage truck</td><td><strong>garbage truck (0.58)</strong> | snowplow (0.15) | crane (0.09) | trailer truck (0.01) | tow truck (0.01)</td><td>Correct</td></tr>
+                <tr><td>#15</td><td>garbage truck</td><td><strong>garbage truck (0.83)</strong> | trailer truck (0.00) | pickup (0.00) | forklift (0.00) | mobile home (0.00)</td><td>Correct</td></tr>
+                <tr><td>#16</td><td>parachute</td><td><strong>parachute (0.91)</strong> | llama (0.00) | alp (0.00) | seashore (0.00) | sandbar (0.00)</td><td>Correct</td></tr>
+                <tr><td>#17</td><td>parachute</td><td><strong>parachute (0.83)</strong> | balloon (0.04) | airship (0.00) | seashore (0.00) | lampshade (0.00)</td><td>Correct</td></tr>
+                <tr><td>#18</td><td>parachute</td><td><strong>parachute (0.91)</strong> | balloon (0.00) | seashore (0.00) | llama (0.00) | rugby ball (0.00)</td><td>Correct</td></tr>
+                <tr><td>#19</td><td>parachute</td><td><strong>parachute (0.91)</strong> | seashore (0.00) | llama (0.00) | sandbar (0.00) | balloon (0.00)</td><td>Correct</td></tr>
             </tbody>
         </table>
         </div>
@@ -229,54 +231,62 @@
         <table>
             <thead><tr><th>Metric</th><th class="num">Result</th></tr></thead>
             <tbody>
-                <tr><td>Top-1 accuracy (1000 classes)</td><td class="num">95% (19/20)</td></tr>
+                <tr><td>Top-1 accuracy (1000 classes)</td><td class="num">100% (20/20)</td></tr>
                 <tr><td>Top-5 accuracy (1000 classes)</td><td class="num">100% (20/20)</td></tr>
-                <tr><td>Per-category top-1</td><td class="num">church 3/4, all others 4/4</td></tr>
+                <tr><td>Per-category top-1</td><td class="num">4/4 in every category</td></tr>
+                <tr><td>Lowest top-1 probability</td><td class="num">0.55 (#5 banana)</td></tr>
             </tbody>
         </table>
         </div>
 
         <figure class="narrow">
-            <img src="images/p1_confusion_matrix.png" alt="ViT confusion matrix: all categories 4 of 4 correct except church with 3 correct and 1 predicted as other">
-            <figcaption>Figure 4. ViT top-1 confusion matrix. ViT predicts over 1000 classes, so any prediction outside the five target classes is grouped as "other". The one "other" prediction is image #10, a church predicted as "bell cote".</figcaption>
+            <img src="images/p1_confusion_matrix.png" alt="ViT confusion matrix: every category has 4 of 4 correct, and the other column is empty">
+            <figcaption>Figure 4. ViT top-1 confusion matrix. ViT predicts over 1000 classes, so predictions outside the five target classes would be grouped as "other". There are none.</figcaption>
         </figure>
 
         <figure>
-            <img src="images/p1_examples.png" alt="Top-5 probability bars for two successes (parachute and garbage truck) and two weakest cases (church predicted as bell cote, and a low-confidence English springer)">
-            <figcaption>Figure 5. The two most confident successes and the two weakest cases. Green bars mark the true class.</figcaption>
+            <img src="images/p1_examples.png" alt="Top-5 probability bars for two successes (parachute and church) and the two least confident cases (a fruit bowl with bananas, and a garbage truck with a large arm)">
+            <figcaption>Figure 5. The two most confident successes and the two least confident predictions. Green bars mark the true class.</figcaption>
         </figure>
 
         <h4>Discussion: Successes</h4>
         <p>
-            <strong>#16 parachute (0.92):</strong> a canopy and skydiver against a plain blue sky. The object is large,
-            centered, and typical for its class. The other top-5 entries are near zero. Several of them (airship, balloon)
-            are <em>other objects seen against the sky</em>, which suggests the background context also counts.
+            All 20 images are correct at top-1, so the weak cases below are the <em>least confident</em> predictions rather than errors.
         </p>
         <p>
-            <strong>#15 garbage truck (0.92):</strong> a side view of a large truck with a compactor body. All the runner-ups are
-            heavy vehicles (crane, trailer truck, snowplow, tow truck). Even the near-zero alternatives make sense, so the
-            model's ranking is meaningful beyond the top-1 label.
+            <strong>#18 parachute (0.91):</strong> a round canopy over a field where other parachutists have already landed.
+            The canopy is clear against the sky. The other top-5 entries are near zero, and one of them (balloon) is another
+            <em>object in the sky</em>.
         </p>
         <p>
-            Even on easy images, the top probability never rises above about 0.92. That is consistent with the
+            <strong>#8 church (0.91):</strong> a red-brick church with a tall bell tower and pointed windows against a clear sky.
+            All the near-zero runner-ups are architectural (bell cote, tile roof, barn, vault), so even the model's alternatives
+            make sense.
+        </p>
+        <p>
+            Even on easy images, the top probability never rises above about 0.91. That is consistent with the
             checkpoint's training recipe, which used label smoothing and mixup. Both keep some probability on other classes,
             even when the model is confident.
         </p>
 
-        <h4>Discussion: Incorrect and Uncertain Examples</h4>
+        <h4>Discussion: Least Confident Examples</h4>
         <p>
-            <strong>#10 church -> bell cote (0.57):</strong> this is the only top-1 error. The image shows a small green wooden church
-            in a forest with a prominent rooftop bell tower. "Bell cote" is the ImageNet class for that small bell tower, so the
-            model labeled the most distinctive <em>part</em> of the building rather than the building itself. It ranks church third
-            (0.13), just behind boathouse (0.13). The wooden siding and wooded setting do not look like a typical stone or white
-            church. The image really does show both a church and a bell cote. Single-label evaluation counts that as an error,
-            even though the answer is visually justified.
+            <strong>#5 banana (0.55 vs. orange 0.30):</strong> a fruit bowl in which apples and tangerines fill most of the frame
+            and two bananas sit in one corner. The image really contains three kinds of fruit, but the model must pick a single
+            label. It splits its probability between the two fruits it has classes for: banana, and orange (which fits the
+            tangerines). Apples barely register (Granny Smith, 0.01), because ImageNet's only apple class is that one green
+            variety. The prediction is "correct" only because the annotation happens to say banana.
         </p>
         <p>
-            <strong>#7 English springer (0.49 vs. Brittany spaniel 0.31):</strong> this prediction is correct but split between two
-            very similar breeds. A yellow hi-vis jacket covers the dog's body, so only the liver-and-white face is visible, and
-            Brittany spaniels share that coloring. Fine-grained breed recognition depends on cues that are hidden here, such as
-            coat pattern and body shape.
+            <strong>#14 garbage truck (0.58 vs. snowplow 0.15, crane 0.09):</strong> a side-loading garbage truck with a large
+            orange hydraulic arm folded in front of the cab. Its dark body also blends into a dark building behind it. The arm
+            looks like a snowplow blade or a crane boom, which are exactly the two runner-ups, so the model's uncertainty matches
+            the truck's most unusual visible part.
+        </p>
+        <p>
+            Two other images are worth noting. #9, a plain white wooden church on posts with no steeple, gets 0.69, with barn
+            as the runner-up (0.14). #3, a dark red-coated golden retriever whose color could suggest another breed, is still
+            0.86 golden retriever, with Irish setter at only 0.01.
         </p>
 
         <h4>How a Fixed Label Set Limits the Questions We Can Ask</h4>
@@ -286,23 +296,23 @@
         </p>
         <ul>
             <li>
-                <strong>It can only answer one question</strong>: "which of these 1000 classes is this?" A question like "is there a
-                person?", "what is the dog doing?", "how many trucks are there?", or "what color is the parachute?" has no
-                output to read. Answering it would need a new head and new training.
+                <strong>It can only answer one question</strong>: "which of these 1000 classes is this?" Questions like "are these
+                bananas ripe?" (#7 green vs. #4 ripe), "how many parachutists are there?" (#18), or "was this taken at dusk?"
+                (#10, #19) have no output to read. Answering them would need a new head and new training.
             </li>
             <li>
-                <strong>Unseen concepts are forced into known labels.</strong> Image #19 is actually a <strong>paraglider</strong>:
-                a rectangular wing flown from a seat harness, not a round parachute. ImageNet has no paraglider class, so the
-                model says "parachute" with 0.91 probability. It cannot say "none of these". Softmax always sums to 1 over the
-                1000 classes, so a high probability does not mean the image belongs to any of them.
+                <strong>A multi-object scene gets one label.</strong> #5 shows apples, tangerines, and bananas together, but the
+                output is a single distribution over classes. The model can only split its probability (banana 0.55, orange 0.30);
+                it cannot say "a bowl of mixed fruit".
             </li>
             <li>
-                <strong>The granularity is fixed by the dataset.</strong> ImageNet has about 120 dog breeds but no plain "dog" class,
-                and one "church" class with no notion of style or interior vs. exterior.
+                <strong>Common concepts can be missing.</strong> ImageNet-1k has <strong>no "person" class</strong>, so the
+                parachutists in #16-#19 and the soldiers in #18 cannot be reported at all. It has no generic "dog" or "apple"
+                either: dogs are split into about 120 breeds, and apples exist only as the Granny Smith variety.
             </li>
             <li>
-                <strong>The labels carry dataset context.</strong> "Tench" photos in ImageNet are mostly anglers holding up the fish
-                (as in #1), so the label partly stands for that whole scene.
+                <strong>The model cannot say "none of these".</strong> Softmax always sums to 1 over the 1000 classes, so any image
+                gets a confident-looking label, and a high probability does not mean the image belongs to any class.
             </li>
         </ul>
         <p>
@@ -353,8 +363,8 @@
         <h4>Cosine Similarities vs. Logits vs. Softmax Probabilities</h4>
         <p>
             <strong>Cosine similarity</strong> measures raw image-text agreement: the angle between two unit vectors. CLIP's
-            image-text values sit in a narrow band (about 0.10-0.32 here), far below 1. The correct prompt usually leads by only
-            0.08-0.15.
+            image-text values sit in a narrow band (about 0.13-0.32 here), far below 1. The correct prompt leads the best wrong one
+            by anywhere from 0.04 (#5, the fruit bowl) to about 0.15.
         </p>
         <p>
             <strong>Logits</strong> are the same numbers multiplied by the learned scale <code>s = 100</code>. The ranking is
@@ -363,40 +373,48 @@
         </p>
         <p>
             <strong>Softmax probabilities</strong> turn each row of logits into a distribution over the <em>candidate texts</em> that
-            sums to 1. Because of the large scale, a small cosine gap becomes a near-certain probability (every row in Figure 6
-            rounds to 1.00).
+            sums to 1. Because of the large scale, even the smallest gap here (0.04 cosine for #5) still gives 0.98 probability.
         </p>
 
         <h4>Why Softmax Probabilities Depend on the Candidate Texts</h4>
         <p>
-            To test this directly, I kept the image (#7, the springer in the hi-vis jacket) and the encoders fixed, and changed
-            only which prompts were compared:
+            To test this directly, I kept the image (#5, the fruit bowl with apples, tangerines, and two bananas) and the encoders
+            fixed, and changed only which prompts were compared:
         </p>
         <div class="table-scroll">
         <table>
             <thead>
-                <tr><th>Candidate text</th><th class="num">Cosine</th><th class="num">P (5 categories)</th><th class="num">P (springer removed)</th><th class="num">P (+ "dog")</th></tr>
+                <tr><th>Candidate text</th><th class="num">Cosine</th><th class="num">P (5 categories)</th><th class="num">P (banana removed)</th><th class="num">P (+ "apple")</th></tr>
             </thead>
             <tbody>
-                <tr><td>a photo of a tench</td><td class="num">0.200</td><td class="num">0.001</td><td class="num"><strong>0.716</strong></td><td class="num">0.001</td></tr>
-                <tr class="highlight"><td>a photo of a English springer</td><td class="num">0.265</td><td class="num"><strong>0.998</strong></td><td class="num">-</td><td class="num"><strong>0.976</strong></td></tr>
-                <tr><td>a photo of a church</td><td class="num">0.145</td><td class="num">0.000</td><td class="num">0.003</td><td class="num">0.000</td></tr>
-                <tr><td>a photo of a garbage truck</td><td class="num">0.177</td><td class="num">0.000</td><td class="num">0.072</td><td class="num">0.000</td></tr>
-                <tr><td>a photo of a parachute</td><td class="num">0.187</td><td class="num">0.000</td><td class="num">0.209</td><td class="num">0.000</td></tr>
-                <tr><td>a photo of a dog</td><td class="num">0.227</td><td class="num">-</td><td class="num">-</td><td class="num">0.022</td></tr>
+                <tr><td>a photo of a golden retriever</td><td class="num">0.217</td><td class="num">0.016</td><td class="num"><strong>0.797</strong></td><td class="num">0.008</td></tr>
+                <tr class="highlight"><td>a photo of a banana</td><td class="num">0.258</td><td class="num"><strong>0.979</strong></td><td class="num">-</td><td class="num">0.468</td></tr>
+                <tr><td>a photo of a church</td><td class="num">0.196</td><td class="num">0.002</td><td class="num">0.089</td><td class="num">0.001</td></tr>
+                <tr><td>a photo of a garbage truck</td><td class="num">0.195</td><td class="num">0.002</td><td class="num">0.080</td><td class="num">0.001</td></tr>
+                <tr><td>a photo of a parachute</td><td class="num">0.186</td><td class="num">0.001</td><td class="num">0.034</td><td class="num">0.000</td></tr>
+                <tr><td>a photo of an apple</td><td class="num">0.259</td><td class="num">-</td><td class="num">-</td><td class="num"><strong>0.522</strong></td></tr>
             </tbody>
         </table>
         </div>
         <p>
             The cosine column never changes, because the image and each text are encoded independently. Only the softmax
-            normalization changes. When the correct text is removed, CLIP does not become uncertain: it puts 72% on
-            <strong>"tench"</strong>, even though that cosine (0.200) is well below the true label's (0.265). Tench is simply the
-            least-bad remaining option. Adding "a photo of a dog", which is also correct but more generic, takes some probability
-            away from "English springer".
+            normalization changes:
         </p>
+        <ul>
+            <li>
+                <strong>Removing the correct text</strong> does not make CLIP uncertain. It puts 80% on <strong>"golden retriever"</strong>,
+                even though that cosine (0.217) is well below banana's (0.258). Golden retriever is simply the least-bad remaining
+                option, plausibly helped by the shared yellow and gold colors.
+            </li>
+            <li>
+                <strong>Adding "a photo of an apple"</strong>, which is also correct (the bowl is mostly apples), makes CLIP
+                <em>switch</em> its answer to apple, 0.522 vs. 0.468. The two cosines differ by only 0.001. The probabilities do not
+                mean "half apple". They reflect a near-tie between two correct descriptions that a single-label softmax has to split.
+            </li>
+        </ul>
         <p>
-            The same image can therefore be reported with 99.8%, 0%, or 97.6% confidence for the same label, depending only on what
-            it is compared against. A CLIP probability is a share of the candidate set, not an absolute measure of how well an image
+            The same image can therefore be reported with 97.9%, 0%, or 46.8% confidence for "banana", depending only on what it is
+            compared against. A CLIP probability is a share of the candidate set, not an absolute measure of how well an image
             matches a sentence.
         </p>
     </section>
@@ -414,16 +432,16 @@
                 <tr><th>Template</th><th class="num">Accuracy</th><th class="num">Mean true-class cosine</th><th class="num">Mean logit margin</th><th class="num">Min logit margin</th></tr>
             </thead>
             <tbody>
-                <tr><td><code>{category}</code></td><td class="num">100%</td><td class="num">0.282</td><td class="num">8.98</td><td class="num">5.67</td></tr>
-                <tr><td><code>a photo of a {category}</code></td><td class="num">100%</td><td class="num">0.299</td><td class="num">11.05</td><td class="num">6.52</td></tr>
-                <tr><td><code>an image showing a {category}</code></td><td class="num">100%</td><td class="num">0.308</td><td class="num">11.42</td><td class="num">6.89</td></tr>
+                <tr><td><code>{category}</code></td><td class="num">100%</td><td class="num">0.287</td><td class="num">9.72</td><td class="num">6.98</td></tr>
+                <tr><td><code>a photo of a {category}</code></td><td class="num">100%</td><td class="num">0.295</td><td class="num">9.57</td><td class="num">4.09</td></tr>
+                <tr><td><code>an image showing a {category}</code></td><td class="num">100%</td><td class="num">0.309</td><td class="num">11.06</td><td class="num">6.46</td></tr>
             </tbody>
         </table>
         </div>
         <p>
             The <strong>logit margin</strong> is the true-class logit minus the highest wrong-class logit. It is positive when
             the prediction is correct, and larger means more decisive. I report it because the softmax probabilities saturate
-            near 1.0 on these easy categories and hide most of the effect of wording.
+            near 1.0 on these categories and hide most of the effect of wording.
         </p>
 
         <figure>
@@ -443,11 +461,11 @@
                 <tr><th>Image</th><th class="num">Margin <code>{category}</code></th><th class="num">Margin <code>a photo of a ...</code></th><th class="num">Margin <code>an image showing a ...</code></th><th>Prediction</th></tr>
             </thead>
             <tbody>
-                <tr><td>#18 parachute</td><td class="num">7.88</td><td class="num">11.81</td><td class="num">13.30</td><td>parachute (all)</td></tr>
-                <tr><td>#15 garbage truck</td><td class="num">11.65</td><td class="num">14.85</td><td class="num">16.80</td><td>garbage truck (all)</td></tr>
-                <tr><td>#3 tench</td><td class="num">9.98</td><td class="num">14.57</td><td class="num">14.53</td><td>tench (all)</td></tr>
-                <tr><td>#4 English springer</td><td class="num">9.09</td><td class="num">8.50</td><td class="num">7.21</td><td>English springer (all)</td></tr>
-                <tr><td>#16 parachute</td><td class="num">9.15</td><td class="num">7.80</td><td class="num">9.65</td><td>parachute (all)</td></tr>
+                <tr class="highlight"><td>#5 banana (fruit bowl)</td><td class="num">7.93</td><td class="num">4.09</td><td class="num">7.40</td><td>banana (all)</td></tr>
+                <tr><td>#17 parachute</td><td class="num">11.44</td><td class="num">11.06</td><td class="num">14.61</td><td>parachute (all)</td></tr>
+                <tr><td>#6 banana</td><td class="num">10.36</td><td class="num">9.07</td><td class="num">12.56</td><td>banana (all)</td></tr>
+                <tr><td>#18 parachute</td><td class="num">9.81</td><td class="num">10.12</td><td class="num">13.18</td><td>parachute (all)</td></tr>
+                <tr><td>#12 garbage truck</td><td class="num">12.26</td><td class="num">11.81</td><td class="num">15.17</td><td>garbage truck (all)</td></tr>
             </tbody>
         </table>
         </div>
@@ -455,19 +473,22 @@
         <h4>Discussion</h4>
         <p>
             <strong>No prediction changes.</strong> All three templates classify all 20 images correctly. These five categories are
-            visually distinct, so any reasonable wording separates them.
+            visually distinct, so any reasonable wording separates them. The only visible probability dip is #5 under
+            "a photo of a", at 0.979.
         </p>
         <p>
-            <strong>The scores do change, consistently.</strong> The bare <code>{category}</code> template has the lowest true-class
-            cosine and the smallest margins. Wrapping the label in a sentence raises the mean margin by about 2-2.5 logits.
-            This matches the CLIP paper's observation: the training captions are sentences, so a sentence-like prompt is closer
-            to what the text encoder learned from. The largest gains are on parachutes and garbage trucks. For example, #18's
-            margin goes from 7.9 to 13.3.
+            <strong>The scores change, but not in one direction.</strong> The true-class cosine rises steadily with longer wording
+            (0.287, 0.295, 0.309), but the decision margin does not follow: 9.72 for the bare label, <strong>9.57</strong> for
+            "a photo of a", and 11.06 for "an image showing a". The margin depends on the <em>gap</em> to the best wrong class,
+            and a shared sentence template raises the similarity of the wrong-class prompts as well. "a photo of a" also produces the
+            weakest single case: #5's margin falls from 7.9 to 4.1, with "golden retriever" as the runner-up. The largest gains
+            come from "an image showing a" on parachutes, trucks, and bananas (#12: 12.3 to 15.2; #17: 11.4 to 14.6).
         </p>
         <p>
-            <strong>The effect is not uniform.</strong> For #4 the bare template has the <em>largest</em> margin, and for #16
-            "a photo of a" is the weakest of the three. No single template is best for every image. All templates also produce
-            the ungrammatical "a photo of a English springer"; I did not test whether the article matters.
+            <strong>The effect is not uniform.</strong> "a photo of a" gives the largest margin for several dogs and churches
+            (#0, #2, #3, #8, #10), while the bare label is best for #1 and #4. No template is best for every image. This differs
+            from the common advice that "a photo of a {label}" is always the better prompt. On this small, easy set, wording has a
+            real but small, image-dependent effect that shows up only in the scores.
         </p>
 
         <h4>Why Changing a Prompt Is Not Fine-Tuning</h4>
@@ -486,31 +507,32 @@
                 <tr><th>Category</th><th class="num">ViT top-1 (1000 classes)</th><th class="num">CLIP, each template (5 texts)</th></tr>
             </thead>
             <tbody>
-                <tr><td>tench</td><td class="num">4/4</td><td class="num">4/4</td></tr>
-                <tr><td>English springer</td><td class="num">4/4</td><td class="num">4/4</td></tr>
-                <tr class="highlight"><td>church</td><td class="num">3/4</td><td class="num">4/4</td></tr>
+                <tr><td>golden retriever</td><td class="num">4/4</td><td class="num">4/4</td></tr>
+                <tr><td>banana</td><td class="num">4/4</td><td class="num">4/4</td></tr>
+                <tr><td>church</td><td class="num">4/4</td><td class="num">4/4</td></tr>
                 <tr><td>garbage truck</td><td class="num">4/4</td><td class="num">4/4</td></tr>
                 <tr><td>parachute</td><td class="num">4/4</td><td class="num">4/4</td></tr>
-                <tr><td><strong>Overall</strong></td><td class="num"><strong>95%</strong></td><td class="num"><strong>100%</strong></td></tr>
+                <tr><td><strong>Overall</strong></td><td class="num"><strong>100%</strong></td><td class="num"><strong>100%</strong></td></tr>
             </tbody>
         </table>
         </div>
         <p>
-            These two numbers measure different tasks, so they should not be read as a ranking:
+            Both models are perfect here, but the numbers measure different tasks, so they should not be read as a tie or a ranking:
         </p>
         <ul>
             <li>
                 <strong>Different candidate sets:</strong> ViT chooses among 1000 classes, while CLIP here only chooses among 5 texts,
-                which is a much easier problem. ViT's only error (#10 -> "bell cote") was a label CLIP was never offered.
+                which is a much easier problem. The difference shows in confidence rather than accuracy: ViT gives #5 only 0.55
+                because it can also choose "orange", while CLIP is not offered any other fruit.
             </li>
             <li>
                 <strong>Different training objectives and data:</strong> ViT-B/16 was trained with a supervised classification loss
                 on 1.28M labeled ImageNet images. CLIP was trained with a contrastive image-text objective on about 400M web
-                image-caption pairs, and never saw ImageNet's label list as a training target. Whether these validation images, or
-                near-copies of them, appear in CLIP's web data is unknown.
+                image-caption pairs, and never saw ImageNet's label list as a training target. These Commons photos are public web
+                images, so it is unknown whether either training set contains them or near-copies.
             </li>
             <li>
-                <strong>Sample size:</strong> 20 images are too few to separate 95% from 100%.
+                <strong>Sample size:</strong> 20 images are far too few to tell the models apart.
             </li>
         </ul>
         <p>
@@ -535,20 +557,20 @@
         <div class="table-scroll">
         <table>
             <thead>
-                <tr><th></th><th class="num">tench</th><th class="num">springer</th><th class="num">church</th><th class="num">garbage truck</th><th class="num">parachute</th></tr>
+                <tr><th></th><th class="num">golden retriever</th><th class="num">banana</th><th class="num">church</th><th class="num">garbage truck</th><th class="num">parachute</th></tr>
             </thead>
             <tbody>
-                <tr><td>tench</td><td class="num"><strong>0.740</strong></td><td class="num">0.496</td><td class="num">0.396</td><td class="num">0.434</td><td class="num">0.497</td></tr>
-                <tr><td>English springer</td><td class="num">0.496</td><td class="num"><strong>0.709</strong></td><td class="num">0.381</td><td class="num">0.437</td><td class="num">0.513</td></tr>
-                <tr><td>church</td><td class="num">0.396</td><td class="num">0.381</td><td class="num"><strong>0.616</strong></td><td class="num">0.416</td><td class="num">0.488</td></tr>
-                <tr><td>garbage truck</td><td class="num">0.434</td><td class="num">0.437</td><td class="num">0.416</td><td class="num"><strong>0.814</strong></td><td class="num">0.513</td></tr>
-                <tr><td>parachute</td><td class="num">0.497</td><td class="num">0.513</td><td class="num">0.488</td><td class="num">0.513</td><td class="num"><strong>0.837</strong></td></tr>
+                <tr><td>golden retriever</td><td class="num"><strong>0.822</strong></td><td class="num">0.527</td><td class="num">0.419</td><td class="num">0.409</td><td class="num">0.513</td></tr>
+                <tr><td>banana</td><td class="num">0.527</td><td class="num"><strong>0.794</strong></td><td class="num">0.421</td><td class="num">0.431</td><td class="num">0.484</td></tr>
+                <tr><td>church</td><td class="num">0.419</td><td class="num">0.421</td><td class="num"><strong>0.602</strong></td><td class="num">0.396</td><td class="num">0.396</td></tr>
+                <tr><td>garbage truck</td><td class="num">0.409</td><td class="num">0.431</td><td class="num">0.396</td><td class="num"><strong>0.649</strong></td><td class="num">0.440</td></tr>
+                <tr><td>parachute</td><td class="num">0.513</td><td class="num">0.484</td><td class="num">0.396</td><td class="num">0.440</td><td class="num"><strong>0.802</strong></td></tr>
             </tbody>
         </table>
         </div>
         <p>
-            Diagonal entries exclude each image's similarity with itself. Mean within-category similarity is <strong>0.743</strong>;
-            mean across-category similarity is <strong>0.457</strong>.
+            Diagonal entries exclude each image's similarity with itself. Mean within-category similarity is <strong>0.734</strong>;
+            mean across-category similarity is <strong>0.444</strong>.
         </p>
 
         <figure class="narrow">
@@ -564,40 +586,35 @@
 
         <h4>Discussion: Similarity Within a Category</h4>
         <p>
-            <strong>Parachute (0.84) and garbage truck (0.81)</strong> are the tightest blocks. The parachutes all share a plain sky
-            and a small figure under a canopy. Three of the four trucks are the same green-and-white company truck seen from the
-            side on a road. The most similar pair overall is #13 / #15 (0.88), two near-identical trucks from that company. The white
-            truck photographed at night (#12) is less similar to the others (0.77-0.80). Color, viewpoint, and lighting matter beyond
-            the object category.
+            <strong>Golden retriever (0.82), parachute (0.80), and banana (0.79)</strong> are the tightest blocks. The most similar
+            pair overall is #0 / #2 (0.88), two adult golden retrievers outdoors with the same coat color. Ripe bananas at a
+            market (#4) and green bananas still on the plant (#7) score 0.84, so CLIP groups them by object despite the different
+            color. The one parachute photographed from the ground among landed soldiers (#18) is the least similar to the other
+            three, which are canopies in open sky (0.71-0.79).
         </p>
         <p>
-            <strong>Church (0.62)</strong> is the loosest block. The four churches differ in material (white wood, stone, green wood),
-            architectural style, and setting. The least similar same-category pair, #9 (a white church by the sea) vs. #11
-            (a framed print of a stone Gothic church with a caption), scores 0.575. That is about as low as the highest
-            cross-category pairs.
-        </p>
-        <p>
-            The paraglider (#19) is 0.84-0.87 similar to the real parachutes. CLIP groups it by its overall appearance (a canopy in
-            the sky) and its likely caption, not by the technical difference.
+            <strong>Garbage truck (0.65) and church (0.60)</strong> are the loosest blocks. The partly hidden blue truck behind bushes
+            and snow (#15) is only 0.55-0.65 similar to the other trucks. The churches vary most: the least similar same-category pair
+            is #9 (a plain white wooden church in a forest) vs. #10 (an ornate Baroque facade at dusk) at <strong>0.44</strong>,
+            which is lower than the top cross-category pairs. #9 is also the most isolated image overall, down to 0.29 with #13.
+            Material, style, lighting, and setting all pull same-category images apart.
         </p>
 
         <h4>Discussion: Unexpected Cross-Category Similarity</h4>
         <p>
-            The most similar cross-category pairs are #6 (springer) with #18 and #19 (parachutes), at 0.61 and 0.58, and #12
-            (garbage truck) with #18 (0.58). These pairs share no object, color, or background (grass vs. sky). What they share is
-            <strong>composition</strong>: a single small subject in motion against a large, uniform background. The parachutes are
-            also moderately similar to every other category (0.49-0.51, the highest cross-category averages). One plausible reason is
-            that their simple layout carries little category-specific detail. At the other end, the least similar category pairs are
-            English springer vs. church (0.38) and tench vs. church (0.40). Close-ups of animals and whole buildings differ in scale,
-            setting, and content all at once.
+            The most similar cross-category pairs are #2 and #0 (golden retrievers) with #19 (a parachutist at sunset), at 0.63 and
+            0.58, and #3 (the dark red golden retriever on a warm yellow background) with #5 (the fruit bowl) at 0.57. These pairs
+            share no object or background. What they share is a <strong>warm golden/orange palette</strong>. The same pattern appears
+            in the category averages: golden retriever and banana, both dominated by yellow and gold, are the most similar pair of
+            categories (0.53). Churches are the least similar to everything (about 0.40-0.42).
         </p>
 
         <h4>What CLIP's Representation Captures</h4>
         <p>
             In these examples, CLIP mainly encodes <em>what the main object is</em>. That fits training to match captions, which
-            usually name the main subject. Within a category, it also encodes <em>how the scene looks</em>: background, color scheme,
-            viewpoint, and framing. With only four images per category, these are observations about this collection rather than
-            general claims.
+            usually name the main subject. Beyond that, it also encodes <em>how the scene looks</em>: color palette, lighting,
+            viewpoint, and how much of the frame the object fills. With only four images per category, these are observations
+            about this collection rather than general claims.
         </p>
     </section>
 
@@ -605,18 +622,59 @@
         <h2>Summary</h2>
         <p>
             ViT-B/16 converts a 224 x 224 image into 196 patch tokens plus a CLS token. Its learned patch projection acts as a bank of
-            color and edge detectors rather than a pixel copy. On 20 held-out ImageNet images it reached 95% top-1 and 100% top-5
-            accuracy. Its one error (church -> bell cote) and its confident "parachute" for a paraglider both come from the fixed
-            1000-class label set.
+            color and edge detectors rather than a pixel copy. On 20 Wikimedia Commons photos it reached 100% top-1 accuracy over 1000
+            classes. Its least confident cases, though, show the limits of a fixed label set: a three-fruit bowl forced into one label
+            (banana 0.55 vs. orange 0.30), and a truck whose arm looks like a snowplow. It also has no way to report the people in
+            the parachute photos.
         </p>
         <p>
             For CLIP, my implementation of normalization, cosine similarity, logit scaling, and softmax matched the built-in output to
-            about 1e-5. CLIP classified all 20 images correctly with every prompt template. Sentence-style prompts consistently gave
-            larger decision margins than bare labels, without changing any weights. Its probabilities depend entirely on the candidate
-            set: removing the correct label moved 72% of the probability to an unrelated class. In the image embedding space,
-            category is the dominant structure (20/20 nearest neighbors in the same class), with color, viewpoint, and composition
-            shaping similarity within and across categories.
+            about 1e-5. CLIP classified all 20 images correctly with every prompt template. Wording changed the decision margins
+            without changing any weights, but not consistently in favor of "a photo of a". Its probabilities depend entirely on the
+            candidate set: removing "banana" moved 80% of the probability to "golden retriever", and adding "apple" flipped the answer
+            on a near-tie. In the image embedding space, category is the dominant structure (20/20 nearest neighbors in the same
+            class), with color, lighting, and viewpoint shaping similarity within and across categories.
         </p>
+    </section>
+
+    <section class="card" id="credits">
+        <h2>Image Credits</h2>
+        <p>
+            All photographs are from Wikimedia Commons and are used under the licenses below. "Public domain" and CC0 images
+            need no attribution but are credited anyway. Images were resized by Commons to 960 pixels wide and otherwise not
+            modified. Figures on this page that include these photos (Figures 1, 2, 5, and 10) are composites. Where they include
+            CC BY-SA images, they are shared under the same license
+            (<a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>).
+        </p>
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>ID</th><th>Image (source page)</th><th>Author</th><th>License</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>#0</td><td><a href="https://commons.wikimedia.org/wiki/File:Golden-retriever-dog.jpg" target="_blank" rel="noopener noreferrer">Golden-retriever-dog.jpg</a></td><td>Karen Arnold</td><td><a href="https://creativecommons.org/publicdomain/zero/1.0/deed.en" target="_blank" rel="noopener noreferrer">CC0</a></td></tr>
+                <tr><td>#1</td><td><a href="https://commons.wikimedia.org/wiki/File:Golden-retriever-1827903_1920.jpg" target="_blank" rel="noopener noreferrer">Golden-retriever-1827903 1920.jpg</a></td><td>RetyiRetyi</td><td><a href="https://creativecommons.org/publicdomain/zero/1.0/deed.en" target="_blank" rel="noopener noreferrer">CC0</a></td></tr>
+                <tr><td>#2</td><td><a href="https://commons.wikimedia.org/wiki/File:Beautiful_golden_retriever_dog_in_the_park.jpg" target="_blank" rel="noopener noreferrer">Beautiful golden retriever dog in the park.jpg</a></td><td>Shixart1985</td><td><a href="https://creativecommons.org/licenses/by/2.0" target="_blank" rel="noopener noreferrer">CC BY 2.0</a></td></tr>
+                <tr><td>#3</td><td><a href="https://commons.wikimedia.org/wiki/File:Golden_Retriever_Sammy.jpg" target="_blank" rel="noopener noreferrer">Golden Retriever Sammy.jpg</a></td><td>Pharaoh Hound</td><td><a href="https://creativecommons.org/licenses/by/2.5" target="_blank" rel="noopener noreferrer">CC BY 2.5</a></td></tr>
+                <tr><td>#4</td><td><a href="https://commons.wikimedia.org/wiki/File:Bunch_of_bananas_on_sale.jpg" target="_blank" rel="noopener noreferrer">Bunch of bananas on sale.jpg</a></td><td>Wilfredor</td><td><a href="https://creativecommons.org/publicdomain/zero/1.0/deed.en" target="_blank" rel="noopener noreferrer">CC0</a></td></tr>
+                <tr><td>#5</td><td><a href="https://commons.wikimedia.org/wiki/File:Fruit-49740_bananas_apples_tangerines_-_Hans_Braxmeier.jpg" target="_blank" rel="noopener noreferrer">Fruit-49740 bananas apples tangerines - Hans Braxmeier.jpg</a></td><td>Hans Braxmeier</td><td><a href="https://creativecommons.org/publicdomain/zero/1.0/deed.en" target="_blank" rel="noopener noreferrer">CC0</a></td></tr>
+                <tr><td>#6</td><td><a href="https://commons.wikimedia.org/wiki/File:Punti_(Banana).jpg" target="_blank" rel="noopener noreferrer">Punti (Banana).jpg</a></td><td>Elaine Mae Yon Jimin</td><td><a href="https://creativecommons.org/licenses/by/4.0" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></td></tr>
+                <tr><td>#7</td><td><a href="https://commons.wikimedia.org/wiki/File:Kadalikkula.JPG" target="_blank" rel="noopener noreferrer">Kadalikkula.JPG</a></td><td>Noblevmy at Malayalam Wikipedia</td><td><a href="https://creativecommons.org/licenses/by/2.5" target="_blank" rel="noopener noreferrer">CC BY 2.5</a></td></tr>
+                <tr><td>#8</td><td><a href="https://commons.wikimedia.org/wiki/File:La_Salette_Historic_Church_and_Hall_Exterior_-_La_Salette,_ON.jpg" target="_blank" rel="noopener noreferrer">La Salette Historic Church and Hall Exterior - La Salette, ON.jpg</a></td><td>JFVoll</td><td><a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a></td></tr>
+                <tr><td>#9</td><td><a href="https://commons.wikimedia.org/wiki/File:Liberty_Unversalist_Church_Exterior_(2019).jpg" target="_blank" rel="noopener noreferrer">Liberty Unversalist Church Exterior (2019).jpg</a></td><td>UU Archivist</td><td><a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a></td></tr>
+                <tr><td>#10</td><td><a href="https://commons.wikimedia.org/wiki/File:St_Casimir_Church_Exterior_At_Dusk,_Vilnius,_Lithuania_-_Diliff.jpg" target="_blank" rel="noopener noreferrer">St Casimir Church Exterior At Dusk, Vilnius, Lithuania - Diliff.jpg</a></td><td>Diliff</td><td><a href="https://creativecommons.org/licenses/by-sa/3.0" target="_blank" rel="noopener noreferrer">CC BY-SA 3.0</a></td></tr>
+                <tr><td>#11</td><td><a href="https://commons.wikimedia.org/wiki/File:Church_of_All_Saints,_Odiham_1.JPG" target="_blank" rel="noopener noreferrer">Church of All Saints, Odiham 1.JPG</a></td><td>Lewis Hulbert</td><td><a href="https://creativecommons.org/licenses/by-sa/3.0" target="_blank" rel="noopener noreferrer">CC BY-SA 3.0</a></td></tr>
+                <tr><td>#12</td><td><a href="https://commons.wikimedia.org/wiki/File:Garbage_truck_in_Tomasz%C3%B3w_Mazowiecki,_Poland.jpg" target="_blank" rel="noopener noreferrer">Garbage truck in Tomaszów Mazowiecki, Poland.jpg</a></td><td>WrS.tm.pl</td><td>Public domain</td></tr>
+                <tr><td>#13</td><td><a href="https://commons.wikimedia.org/wiki/File:Garbage_truck_DOD2009.jpg" target="_blank" rel="noopener noreferrer">Garbage truck DOD2009.jpg</a></td><td>Leotard</td><td>Public domain</td></tr>
+                <tr><td>#14</td><td><a href="https://commons.wikimedia.org/wiki/File:Garbage_Truck_(51997955326).jpg" target="_blank" rel="noopener noreferrer">Garbage Truck (51997955326).jpg</a></td><td>WORT News</td><td><a href="https://creativecommons.org/licenses/by/2.0" target="_blank" rel="noopener noreferrer">CC BY 2.0</a></td></tr>
+                <tr><td>#15</td><td><a href="https://commons.wikimedia.org/wiki/File:Republic_Services_garbage_truck_in_Kent,_WA_(2025)_-_0009.jpg" target="_blank" rel="noopener noreferrer">Republic Services garbage truck in Kent, WA (2025) - 0009.jpg</a></td><td>Roc0ast3r</td><td><a href="https://creativecommons.org/publicdomain/zero/1.0/deed.en" target="_blank" rel="noopener noreferrer">CC0</a></td></tr>
+                <tr><td>#16</td><td><a href="https://commons.wikimedia.org/wiki/File:Massachusetts_Minutemen_at_Army_Black_Knights_football_(October_28,_2023)_(Flickr_53296503147).jpg" target="_blank" rel="noopener noreferrer">Massachusetts Minutemen at Army Black Knights football (October 28, 2023) (Flickr 53296503147).jpg</a></td><td>United States Military Academy</td><td>Public domain</td></tr>
+                <tr><td>#17</td><td><a href="https://commons.wikimedia.org/wiki/File:Noble_Partner_2017_(36291062582).jpg" target="_blank" rel="noopener noreferrer">Noble Partner 2017 (36291062582).jpg</a></td><td>U.S. Army Europe from Wiesbaden, Germany</td><td>Public domain</td></tr>
+                <tr><td>#18</td><td><a href="https://commons.wikimedia.org/wiki/File:Georgia_National_Guard_(36291135871).jpg" target="_blank" rel="noopener noreferrer">Georgia National Guard (36291135871).jpg</a></td><td>The National Guard</td><td><a href="https://creativecommons.org/licenses/by/2.0" target="_blank" rel="noopener noreferrer">CC BY 2.0</a></td></tr>
+                <tr><td>#19</td><td><a href="https://commons.wikimedia.org/wiki/File:Parachute_Landing_at_Sunset_Over_Open_Field.jpg" target="_blank" rel="noopener noreferrer">Parachute Landing at Sunset Over Open Field.jpg</a></td><td>Rstpch</td><td><a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a></td></tr>
+            </tbody>
+        </table>
+        </div>
     </section>
 </main>
 

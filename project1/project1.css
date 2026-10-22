@@ -392,3 +392,20 @@ figure.narrow {
 figure {
     min-width: 0;
 }
+
+.card a,
+figcaption a {
+    color: var(--accent-strong);
+    text-decoration-color: rgba(184, 156, 232, 0.5);
+    text-underline-offset: 2px;
+}
+
+.card a:hover,
+.card a:focus-visible,
+figcaption a:hover {
+    color: var(--accent);
+}
+
+.card a {
+    overflow-wrap: anywhere;
+}
