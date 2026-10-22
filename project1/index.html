@@ -164,27 +164,28 @@
             to float rounding (maximum difference <code>3.1e-6</code>).
         </p>
         <p>
-            Individual learned filters are hard to interpret, because the 768 output dimensions are an arbitrary basis.
-            Following the ViT paper (Dosovitskiy et al., 2021), Figure 3 instead shows the top principal components of the
-            768 filters. These 28 components explain 41.7% of the filters' variance.
+            To compare the two directly, Figure 3 shows the same image both ways. Each projected token has 768 numbers,
+            which is too many to display, so I compressed every token to its 3 most important directions (PCA) and showed
+            them as an RGB color. Patches with similar colors in the token map are patches the projection treats as similar.
         </p>
         <figure>
-            <img src="images/p1_projection_pca.png" alt="Grid of 28 principal components of the learned patch projection filters">
-            <figcaption>Figure 3. Top 28 principal components of the learned patch projection filters.</figcaption>
+            <img src="images/p1_token_map.png" alt="Left: the golden retriever image split into a 14 by 14 grid of pixel patches. Right: the same 14 by 14 grid where each cell's color summarizes its 768-number projected token">
+            <figcaption>Figure 3. Left: my 196 pixel patches. Right: the model's 196 projected tokens for the same image, each compressed to 3 numbers and shown as a color (these 3 numbers capture about 34% of the variation between tokens).</figcaption>
         </figure>
 
         <h4>Discussion</h4>
         <p>
-            The two visualizations show different things. My patches are <strong>pixels</strong>: you can still see the grass,
-            the fur, and the collar. The projection filters are <strong>learned feature detectors</strong>.
-            The leading components are smooth, low-frequency patterns: green/magenta and blue/orange color-opponent blobs,
-            and horizontal and vertical stripes. They look much like the first-layer filters of a CNN.
+            The two grids show different things. My patches are still pixels: you can see the fur, nose, and collar.
+            The token map no longer looks like the dog at all, because each cell is now a vector of learned features
+            instead of colors.
         </p>
         <p>
-            A projected token therefore no longer stores what a patch looks like pixel by pixel. It stores how strongly
-            the patch matches each learned pattern (color contrast, edges at certain orientations). Everything after this
-            point in the transformer works on these 196 feature vectors, plus the CLS token and positional information,
-            not on the image itself.
+            The token map groups patches by texture more than by pixel color. The smooth, blurry background patches
+            (the greenery at the top and the grass on the left) all get similar muted gray/olive colors, even though their
+            pixels range from dark green to light brown. Patches along the top of the dog's head, where light fur meets the
+            dark background, stand out in strong blues and purples, and patches inside the fur are mostly reds and oranges.
+            The projection mainly responds to edges, contrast, and texture, and everything after this point in the transformer
+            works on these 196 feature vectors, plus the CLS token and positional information, not on the image itself.
         </p>
     </section>
 
@@ -621,8 +622,8 @@
     <section class="card">
         <h2>Summary</h2>
         <p>
-            ViT-B/16 converts a 224 x 224 image into 196 patch tokens plus a CLS token. Its learned patch projection acts as a bank of
-            color and edge detectors rather than a pixel copy. On 20 Wikimedia Commons photos it reached 100% top-1 accuracy over 1000
+            ViT-B/16 converts a 224 x 224 image into 196 patch tokens plus a CLS token. Its learned patch projection turns each patch into
+            768 learned features that group patches by edges and texture rather than by pixel color. On 20 Wikimedia Commons photos it reached 100% top-1 accuracy over 1000
             classes. Its least confident cases, though, show the limits of a fixed label set: a three-fruit bowl forced into one label
             (banana 0.55 vs. orange 0.30), and a truck whose arm looks like a snowplow. It also has no way to report the people in
             the parachute photos.
@@ -679,7 +680,7 @@
 </main>
 
 <footer class="site-footer">
-    <p>Project 1 report page · Generated from executed notebooks and curated analysis.</p>
+    <p>© 2026 Andrew Nguyen</p>
 </footer>
 
 </body>
